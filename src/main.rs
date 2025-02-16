@@ -55,6 +55,10 @@ struct Args {
 
     /// List of key codes to generate
     key_codes: Vec<KeyCode>,
+
+    /// Entrypoint override
+    #[arg(short, long, value_parser = maybe_hex::<u32>)]
+    entrypoint: Option<u32>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, EnumString, strum::Display)]
@@ -234,7 +238,7 @@ fn main() -> Result<()> {
     if let Some(c) = key_codes.first() {
         infile[0x10..0x14].copy_from_slice(&c.crc[0].to_be_bytes());
         infile[0x14..0x18].copy_from_slice(&c.crc[1].to_be_bytes());
-        infile[0x08..0x0C].copy_from_slice(&c.entrypoint.to_be_bytes());
+        infile[0x08..0x0C].copy_from_slice(&args.entrypoint.unwrap_or(c.entrypoint).to_be_bytes());
     }
 
     write(args.outfile, infile)?;
