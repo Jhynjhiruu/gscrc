@@ -38,6 +38,7 @@ use clap_num::maybe_hex;
 use strum::EnumString;
 use thiserror::Error;
 
+#[cfg(feature = "7105")]
 const CIC7105: &[u8] = include_bytes!("../cic7105.bin");
 
 #[derive(Parser, Debug)]
@@ -72,6 +73,7 @@ enum Cic {
     Cic7101,
     #[strum(serialize = "7103", serialize = "6103")]
     Cic7103,
+    #[cfg(feature = "7105")]
     #[strum(serialize = "7105", serialize = "6105")]
     Cic7105,
     #[strum(serialize = "7106", serialize = "6106")]
@@ -83,6 +85,7 @@ impl Cic {
         match self {
             Cic::Cic7101 => 0xF8CA4DDC,
             Cic::Cic7103 => 0xA3886759,
+            #[cfg(feature = "7105")]
             Cic::Cic7105 => 0xDF26F436,
             Cic::Cic7106 => 0x1FEA617A,
         }
@@ -177,6 +180,7 @@ fn main() -> Result<()> {
 
         let (mut t1, mut t2, mut t3, mut t4, mut t5, mut t6) = (seed, seed, seed, seed, seed, seed);
 
+        #[cfg_attr(not(feature = "7105"), allow(unused_variables))]
         for (index, i) in data.chunks_exact(size_of::<u32>()).enumerate() {
             let d = Wrapping(u32::from_be_bytes(i.try_into().unwrap()));
 
@@ -194,6 +198,7 @@ fn main() -> Result<()> {
                 t2 ^= t6 ^ d;
             }
 
+            #[cfg(feature = "7105")]
             if key.cic == Cic::Cic7105 {
                 let from_cic = Wrapping(u32::from_be_bytes(
                     CIC7105[0x710 + ((index * 4) & 0xFF)
@@ -206,12 +211,19 @@ fn main() -> Result<()> {
             } else {
                 t1 += t5 ^ d;
             }
+
+            #[cfg(not(feature = "7105"))]
+            {
+                t1 += t5 ^ d;
+            }
         }
 
         let crc = match key.cic {
+            Cic::Cic7101 => [(t6 ^ t4 ^ t3).0, (t5 ^ t2 ^ t1).0],
             Cic::Cic7103 => [((t6 ^ t4) + t3).0, ((t5 ^ t2) + t1).0],
+            #[cfg(feature = "7105")]
+            Cic::Cic7105 => [(t6 ^ t4 ^ t3).0, (t5 ^ t2 ^ t1).0],
             Cic::Cic7106 => [((t6 * t4) + t3).0, ((t5 * t2) + t1).0],
-            Cic::Cic7101 | Cic::Cic7105 => [(t6 ^ t4 ^ t3).0, (t5 ^ t2 ^ t1).0],
         };
 
         let checksum = crc[0]
