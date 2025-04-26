@@ -51,7 +51,7 @@ struct Args {
 
     /// Offset in file to write keycodes
     #[arg(value_parser = maybe_hex::<usize>)]
-    offset: usize,
+    offset: Option<usize>,
 
     /// List of key codes to generate
     key_codes: Vec<KeyCode>,
@@ -227,13 +227,15 @@ fn main() -> Result<()> {
         })
     }
 
-    let mut out = vec![];
-    let mut cursor = Cursor::new(&mut out);
-    key_codes.write_be(&mut cursor)?;
+    if let Some(offset) = args.offset {
+        let mut out = vec![];
+        let mut cursor = Cursor::new(&mut out);
+        key_codes.write_be(&mut cursor)?;
 
-    out.resize(0x400, 0x00);
+        out.resize(0x400, 0x00);
 
-    infile[args.offset..args.offset + 0x400].copy_from_slice(&out);
+        infile[offset..offset + 0x400].copy_from_slice(&out);
+    }
 
     if let Some(c) = key_codes.first() {
         infile[0x10..0x14].copy_from_slice(&c.crc[0].to_be_bytes());
