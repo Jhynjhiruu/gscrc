@@ -50,7 +50,7 @@ struct Args {
     outfile: PathBuf,
 
     /// Offset in file to write keycodes
-    #[arg(value_parser = maybe_hex::<usize>)]
+    #[arg(short, long, value_parser = maybe_hex::<usize>)]
     offset: Option<usize>,
 
     /// List of key codes to generate
