@@ -27,6 +27,7 @@ use std::fmt::Display;
 use std::fs::{read, write};
 use std::io::Cursor;
 use std::iter::repeat;
+use std::mem::size_of;
 use std::num::{ParseIntError, Wrapping};
 use std::path::PathBuf;
 use std::str::FromStr;
